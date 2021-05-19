@@ -7,8 +7,8 @@ import re
 import pandas as pd
 from io import StringIO
 import time
+pd.set_option("display.max_rows", None, "display.max_columns", None)
 
-from PyQt5.QtWidgets import QPushButton, QGridLayout
 
 
 class SuperText(QtWidgets.QTextEdit):
@@ -19,9 +19,13 @@ class SuperText(QtWidgets.QTextEdit):
         self.template_doc = ""
         self.setHtml(example_text)
         self.prev_content = ""
+        # Additions:
         self.prev_word = ""
         self.prev_sentence = ""
         self.sentence_index = 0
+        self.test_start_time = time.time()
+        self.last_word_timestamp = 0
+        # ....till here
         self.generate_template()
         self.render_template()
         self.initUI()
@@ -68,35 +72,78 @@ class SuperText(QtWidgets.QTextEdit):
             content = re.sub(" " + str(numbers[num_id])  , " <a href='%d'>$%d$</a>" % (num_id, num_id), content, count=1)
         self.template_doc = content
 
+    # Grander additions:
 
     def text_changed(self):
-        print("key pressed at: ", time.time(), end=", ")
+        # registers text changes
+        if (self.last_word_timestamp == 0):
+            # starting test at first keypress through setting test_start time
+            self.test_start_time = time.time()
+            self.last_word_timestamp = time.time()
+        print("key pressed at", time.time(), end=", ")
+        # prints any keypress outside of csv table -- 'cause saving these timestamp in csv would be a overkill
         if len(self.prev_content) < len(self.toPlainText()):
+            # if there was anything added to the current content then:
             current_letter = self.toPlainText()[-1]
-            if current_letter in [" ", ",", ".", "?"]:
+            if current_letter in [" ", ",", ".", "?", "!"]:
                 if len(self.toPlainText()) >= 2:
-                    if not self.toPlainText()[-2] in [" ", ",", ".", "?"]:
+                    if not self.toPlainText()[-2] in [" ", ",", ".", "?", "!"]:
+                        # tests if the last entry was a word/number
                         self.prev_word = re.findall(r"[\w']+", self.prev_content)[-1]
                         print("word typed at", time.time(), ":", self.prev_word)
+                        self.add_word_to_table()
             if current_letter in ["\n"]:
+                if len(self.toPlainText()) >= 2:
+                    if not self.toPlainText()[-2] in [" ", ",", ".", "?", "\n"]:
+                        # tests if the last entry was a word/number
+                        self.prev_word = re.findall(r"[\w']+", self.prev_content)[-1]
+                        print("word typed at", time.time(), ":", self.prev_word)
+                        self.add_word_to_table()
                 self.prev_sentence = self.prev_content.split("\n")[-1]
                 print("sentence typed at", time.time(), ": ", self.prev_sentence)
+                self.sentence_finished_on_table()
         self.prev_content = self.toPlainText()
+        #updates self.prev_content
 
 
     def setup_table(self):
-        # Initializes test & dataframe
-        self.column_names = ["sentence index", "Timestamp (start)", "Timestamp (end)", "word typed", "entry speed", "Time mm:ss", "Timestamp (test finished)"]
+        # Initializes main dataframe
+        self.column_names = ["sentence index", "Timestamp (start of word)", "Timestamp (end of word)", "word typed", "entry speed (in ms)", "Timestamp (test started)", "Timestamp (test finished)"]
         self.log_data = pd.DataFrame(columns=self.column_names)
-        self.log_data[self.column_names[1]] = ["Hi", "There"]
 
+
+    def add_word_to_table(self):
+        # adding a row:
+        current_time = time.time()
+        temp_df = pd.DataFrame(columns=self.column_names)
+        temp_df["sentence index"] = [self.sentence_index]
+        temp_df["Timestamp (start of word)"] = [self.last_word_timestamp]
+        temp_df["Timestamp (end of word)"] = [current_time]
+        temp_df["word typed"] = [self.prev_word]
+        temp_df["entry speed (in ms)"] = [int((current_time - self.last_word_timestamp)*1000)]
+        temp_df["Timestamp (test started)"] = [self.test_start_time]
+        self.log_data = self.log_data.append(temp_df, ignore_index=True)
+
+    def sentence_finished_on_table(self):
+        print()
+        self.sentence_index = self.sentence_index + 1
+        self.log_table()
+        return
+
+
+    def log_table(self):
         # https://stackoverflow.com/questions/51201519/pandas-to-csvsys-stdout-doesnt-work-under-my-environment/51201718
+        # --> method to convert dataframe to csv and to write it in stdout
         output = StringIO()
         self.log_data.to_csv(output)
         output.seek(0)
         print(output.read())
 
     def closeEvent(self, event):
+        current_time = time.time()
+        print("\n\ntest finished (all sentences typed) at", current_time)
+        self.log_data["Timestamp (test finished)"] = current_time
+        self.log_table()
         print("Closes")
 
 
