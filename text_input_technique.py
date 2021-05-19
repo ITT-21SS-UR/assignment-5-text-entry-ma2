@@ -86,6 +86,7 @@ class SuperText(QtWidgets.QTextEdit):
             # starting test at first keypress through setting test_start time
             self.test_start_time = time.time()
             self.last_word_timestamp = time.time()
+        # needed Addition:
         if not self.ignore_text_changes:
             print("key pressed at", time.time(), end=", ")
             # prints any keypress outside of csv table -- 'cause saving these timestamp in csv would be a overkill
@@ -133,6 +134,7 @@ class SuperText(QtWidgets.QTextEdit):
         print(self.placeholder_dict)
 
     def check_for_placeholder(self, word):
+        # checks if key has placeholder
         replacement = self.placeholder_dict.get(word, "invalid")
         if replacement == "invalid":
             return
@@ -186,6 +188,7 @@ class SuperText(QtWidgets.QTextEdit):
 
 
 def main():
+    # Additions - technique activates on stdin:
     global filepath, input_technique_enabled
     filepath = ""
     input_technique_enabled = True
@@ -195,7 +198,7 @@ def main():
         filepath = input("Placeholder table path (optional) : ")
     else:
         print("input technique disabled")
-
+    # ...till here
     app = QtWidgets.QApplication(sys.argv)
     super_text = SuperText("")
     sys.exit(app.exec_())
