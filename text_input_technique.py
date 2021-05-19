@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import sys
+from pathlib import Path
+
 from PyQt5 import QtGui, QtCore, QtWidgets
 import re
 import pandas as pd
 from io import StringIO
 import time
 from datetime import date
+import csv
 
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
@@ -26,8 +29,10 @@ class SuperText(QtWidgets.QTextEdit):
         self.sentence_index = 0
         self.test_start_time = time.time()
         self.last_word_timestamp = 0
-        self.input_technique_enabled = True
+        self.input_technique_enabled = input_technique_enabled
         self.ignore_text_changes = False
+        self.placeholder_dict = [None, None]
+        self.get_placeholder()
         # ....till here
         self.generate_template()
         self.render_template()
@@ -105,16 +110,26 @@ class SuperText(QtWidgets.QTextEdit):
                 self.prev_word = re.findall(r"[\w'/$]+", self.prev_content)[-1]
                 print("word typed at", time.time(), ":", self.prev_word)
                 self.add_word_to_table()
+
                 if self.input_technique_enabled & (self.prev_word[0] == "$"):
                     self.check_for_placeholder(self.prev_word)
 
-    def check_for_placeholder(self, word):
-        pla_dict = {
+    def get_placeholder(self):
+        self.placeholder_dict = {
             "$DATE": date.today().strftime("%d.%m.%Y"),
-            "$MFG": "Mit freundlichen Grüßen",
-            "$NAME": "Heinz Klaus Nikolaus"
+            "$MFG": "Mit freundlichen Grüßen"
         }
-        replacement = pla_dict.get(word, "invalid")
+        file = Path(filepath)
+        if file.is_file():
+            # borrowed from here: https://stackoverflow.com/questions/6740918/creating-a-dictionary-from-a-csv-file
+            with open(filepath, mode='r') as infile:
+                reader = csv.reader(infile)
+                for rows in reader:
+                    self.placeholder_dict[rows[0]] = rows[1]
+        print(self.placeholder_dict)
+
+    def check_for_placeholder(self, word):
+        replacement = self.placeholder_dict.get(word, "invalid")
         if replacement == "invalid":
             return
         self.ignore_text_changes = True
@@ -126,7 +141,7 @@ class SuperText(QtWidgets.QTextEdit):
         # Initializes main dataframe
         self.column_names = ["sentence index", "Timestamp (start of word)", "Timestamp (end of word)", "word typed",
                              "entry speed (in ms)", "Timestamp (test started)", "Timestamp (test finished)"]
-        self.log_data = pd.DataFrame(columns=self.column_names)
+        self.log_data = pd.DataFrame(columns= self.column_names)
 
     def add_word_to_table(self):
         # adding a row:
@@ -139,6 +154,8 @@ class SuperText(QtWidgets.QTextEdit):
         temp_df["entry speed (in ms)"] = [int((current_time - self.last_word_timestamp) * 1000)]
         temp_df["Timestamp (test started)"] = [int(self.test_start_time)*1000]
         self.log_data = self.log_data.append(temp_df, ignore_index=True)
+
+
 
     def sentence_finished_on_table(self):
         print()
@@ -163,7 +180,16 @@ class SuperText(QtWidgets.QTextEdit):
 
 
 def main():
-    
+    global filepath, input_technique_enabled
+    filepath = ""
+    input_technique_enabled = True
+    input_technique_enabled = input("Enable input technique?(Y/N) : ").lower()[0] == "y"
+    if input_technique_enabled:
+        print("input technique enabled")
+        filepath = input("Placeholder table path (optional) : ")
+    else:
+        print("input technique disabled")
+
     app = QtWidgets.QApplication(sys.argv)
     super_text = SuperText("")
     sys.exit(app.exec_())
