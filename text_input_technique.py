@@ -163,7 +163,7 @@ class SuperText(QtWidgets.QTextEdit):
 
 
 def main():
-    global calcstring
+    
     app = QtWidgets.QApplication(sys.argv)
     super_text = SuperText("")
     sys.exit(app.exec_())

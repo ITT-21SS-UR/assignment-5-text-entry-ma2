@@ -115,11 +115,11 @@ class SuperText(QtWidgets.QTextEdit):
         current_time = time.time()
         temp_df = pd.DataFrame(columns=self.column_names)
         temp_df["sentence index"] = [self.sentence_index]
-        temp_df["Timestamp (start of word)"] = [self.last_word_timestamp]
-        temp_df["Timestamp (end of word)"] = [current_time]
+        temp_df["Timestamp (start of word)"] = [int(self.last_word_timestamp * 1000)]
+        temp_df["Timestamp (end of word)"] = [int(current_time) * 1000]
         temp_df["word typed"] = [self.prev_word]
-        temp_df["entry speed (in ms)"] = [int((current_time - self.last_word_timestamp)*1000)]
-        temp_df["Timestamp (test started)"] = [self.test_start_time]
+        temp_df["entry speed (in ms)"] = [int((current_time - self.last_word_timestamp) * 1000)]
+        temp_df["Timestamp (test started)"] = [int(self.test_start_time) * 1000]
         self.log_data = self.log_data.append(temp_df, ignore_index=True)
 
     def sentence_finished_on_table(self):
@@ -140,7 +140,7 @@ class SuperText(QtWidgets.QTextEdit):
     def closeEvent(self, event):
         current_time = time.time()
         print("\n\ntest finished (all sentences typed) at", current_time)
-        self.log_data["Timestamp (test finished)"] = current_time
+        self.log_data["Timestamp (test finished)"] = int(current_time * 1000)
         self.log_table()
         print("Closes")
 
