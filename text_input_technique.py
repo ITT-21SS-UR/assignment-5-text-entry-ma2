@@ -75,7 +75,6 @@ class SuperText(QtWidgets.QTextEdit):
             content = re.sub(" " + str(numbers[num_id]), " <a href='%d'>$%d$</a>" % (num_id, num_id), content, count=1)
         self.template_doc = content
 
-    # Grander additions:
 
     def text_changed(self):
         # registers text changes
