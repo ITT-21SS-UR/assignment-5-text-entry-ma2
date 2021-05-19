@@ -90,43 +90,38 @@ class SuperText(QtWidgets.QTextEdit):
                 # if there was anything added to the current content then:
                 current_letter = self.toPlainText()[-1]
                 if current_letter in [" ", ",", ".", "?", "!"]:
-                    if len(self.toPlainText()) >= 2:
-                        if not self.toPlainText()[-2] in [" ", ",", ".", "?", "!"]:
-                            # tests if the last entry was a word/number
-                            self.prev_word = re.findall(r"[\w']+", self.prev_content)[-1]
-                            print("word typed at", time.time(), ":", self.prev_word)
-                            self.add_word_to_table()
-                            if self.input_technique_enabled:
-                                self.check_for_placeholder(self.prev_word)
+                    self.process_word()
                 if current_letter in ["\n"]:
-                    if len(self.toPlainText()) >= 2:
-                        if not self.toPlainText()[-2] in [" ", ",", ".", "?", "\n"]:
-                            # tests if the last entry was a word/number
-                            self.prev_word = re.findall(r"[\w']+", self.prev_content)[-1]
-                            print("word typed at", time.time(), ":", self.prev_word)
-                            self.add_word_to_table()
+                    self.process_word()
                     self.prev_sentence = self.prev_content.split("\n")[-1]
                     print("sentence typed at", time.time(), ": ", self.prev_sentence)
                     self.sentence_finished_on_table()
             self.prev_content = self.toPlainText()
-        # updates self.prev_content
+            # updates self.prev_content
+
+    def process_word(self):
+        if len(self.toPlainText()) >= 2:
+            if not self.toPlainText()[-2] in [" ", ",", ".", "?", "\n"]:
+                # tests if the last entry was a word/number
+                self.prev_word = re.findall(r"[\w'/$]+", self.prev_content)[-1]
+                print("word typed at", time.time(), ":", self.prev_word)
+                self.add_word_to_table()
+                if self.input_technique_enabled & (self.prev_word[0] == "$"):
+                    self.check_for_placeholder(self.prev_word)
 
     def check_for_placeholder(self, word):
-        print("here")
-        print(word)
-        if True:
-            print("there")
-            pla_dict = {
-                "Date": date.today().strftime("%d.%m.%Y"),
-                "$MfG": "Couldn't open file!"
-            }
-            replacement = pla_dict.get(word, "invalid")
-            if (replacement == "invalid"):
-                return
-            self.ignore_text_changes = True
-            self.setText(self.toPlainText().replace(word, replacement))
-            self.ignore_text_changes = False
-            self.moveCursor(QtGui.QTextCursor.End)
+        pla_dict = {
+            "$DATE": date.today().strftime("%d.%m.%Y"),
+            "$MFG": "Mit freundlichen Grüßen",
+            "$NAME": "Heinz Klaus Nikolaus"
+        }
+        replacement = pla_dict.get(word, "invalid")
+        if replacement == "invalid":
+            return
+        self.ignore_text_changes = True
+        self.setText(self.toPlainText().replace(word, replacement))
+        self.ignore_text_changes = False
+        self.moveCursor(QtGui.QTextCursor.End)
 
     def setup_table(self):
         # Initializes main dataframe

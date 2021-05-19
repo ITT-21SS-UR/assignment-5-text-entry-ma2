@@ -76,7 +76,7 @@ class SuperText(QtWidgets.QTextEdit):
 
     def text_changed(self):
         # registers text changes
-        if (self.last_word_timestamp == 0):
+        if self.last_word_timestamp == 0:
             # starting test at first keypress through setting test_start time
             self.test_start_time = time.time()
             self.last_word_timestamp = time.time()
@@ -86,24 +86,22 @@ class SuperText(QtWidgets.QTextEdit):
             # if there was anything added to the current content then:
             current_letter = self.toPlainText()[-1]
             if current_letter in [" ", ",", ".", "?", "!"]:
-                if len(self.toPlainText()) >= 2:
-                    if not self.toPlainText()[-2] in [" ", ",", ".", "?", "!"]:
-                        # tests if the last entry was a word/number
-                        self.prev_word = re.findall(r"[\w']+", self.prev_content)[-1]
-                        print("word typed at", time.time(), ":", self.prev_word)
-                        self.add_word_to_table()
+                self.process_word()
             if current_letter in ["\n"]:
-                if len(self.toPlainText()) >= 2:
-                    if not self.toPlainText()[-2] in [" ", ",", ".", "?", "\n"]:
-                        # tests if the last entry was a word/number
-                        self.prev_word = re.findall(r"[\w']+", self.prev_content)[-1]
-                        print("word typed at", time.time(), ":", self.prev_word)
-                        self.add_word_to_table()
+                self.process_word()
                 self.prev_sentence = self.prev_content.split("\n")[-1]
                 print("sentence typed at", time.time(), ": ", self.prev_sentence)
                 self.sentence_finished_on_table()
         self.prev_content = self.toPlainText()
-        #updates self.prev_content
+        # updates self.prev_content
+
+    def process_word(self):
+        if len(self.toPlainText()) >= 2:
+            if not self.toPlainText()[-2] in [" ", ",", ".", "?", "\n"]:
+                # tests if the last entry was a word/number
+                self.prev_word = re.findall(r"[\w'/$]+", self.prev_content)[-1]
+                print("word typed at", time.time(), ":", self.prev_word)
+                self.add_word_to_table()
 
 
     def setup_table(self):
