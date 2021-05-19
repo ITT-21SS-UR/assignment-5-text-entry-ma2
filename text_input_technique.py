@@ -23,12 +23,12 @@ class SuperText(QtWidgets.QTextEdit):
         self.template_doc = ""
         self.setHtml(example_text)
         self.prev_content = ""
-        # Additions:
         self.prev_word = ""
         self.prev_sentence = ""
         self.sentence_index = 0
         self.test_start_time = time.time()
         self.last_word_timestamp = 0
+        # Additions:
         self.input_technique_enabled = input_technique_enabled
         self.ignore_text_changes = False
         self.placeholder_dict = [None, None]
@@ -80,7 +80,6 @@ class SuperText(QtWidgets.QTextEdit):
             content = re.sub(" " + str(numbers[num_id]), " <a href='%d'>$%d$</a>" % (num_id, num_id), content, count=1)
         self.template_doc = content
 
-
     def text_changed(self):
         # registers text changes
         if self.last_word_timestamp == 0:
@@ -114,14 +113,19 @@ class SuperText(QtWidgets.QTextEdit):
                 if self.input_technique_enabled & (self.prev_word[0] == "$"):
                     self.check_for_placeholder(self.prev_word)
 
+    """
+        Additions:
+    """
+
     def get_placeholder(self):
+        # setup placeholder
         self.placeholder_dict = {
             "$DATE": date.today().strftime("%d.%m.%Y"),
             "$MFG": "Mit freundlichen Grüßen"
         }
         file = Path(filepath)
+        # reads from file (optional) and adds to dictionary
         if file.is_file():
-            # borrowed from here: https://stackoverflow.com/questions/6740918/creating-a-dictionary-from-a-csv-file
             with open(filepath, mode='r') as infile:
                 reader = csv.reader(infile)
                 for rows in reader:
@@ -137,25 +141,27 @@ class SuperText(QtWidgets.QTextEdit):
         self.ignore_text_changes = False
         self.moveCursor(QtGui.QTextCursor.End)
 
+    """
+        till here
+    """
+
     def setup_table(self):
         # Initializes main dataframe
         self.column_names = ["sentence index", "Timestamp (start of word)", "Timestamp (end of word)", "word typed",
                              "entry speed (in ms)", "Timestamp (test started)", "Timestamp (test finished)"]
-        self.log_data = pd.DataFrame(columns= self.column_names)
+        self.log_data = pd.DataFrame(columns=self.column_names)
 
     def add_word_to_table(self):
         # adding a row:
         current_time = time.time()
         temp_df = pd.DataFrame(columns=self.column_names)
         temp_df["sentence index"] = [self.sentence_index]
-        temp_df["Timestamp (start of word)"] = [int(self.last_word_timestamp*1000)]
-        temp_df["Timestamp (end of word)"] = [int(current_time)*1000]
+        temp_df["Timestamp (start of word)"] = [int(self.last_word_timestamp * 1000)]
+        temp_df["Timestamp (end of word)"] = [int(current_time) * 1000]
         temp_df["word typed"] = [self.prev_word]
         temp_df["entry speed (in ms)"] = [int((current_time - self.last_word_timestamp) * 1000)]
-        temp_df["Timestamp (test started)"] = [int(self.test_start_time)*1000]
+        temp_df["Timestamp (test started)"] = [int(self.test_start_time) * 1000]
         self.log_data = self.log_data.append(temp_df, ignore_index=True)
-
-
 
     def sentence_finished_on_table(self):
         print()

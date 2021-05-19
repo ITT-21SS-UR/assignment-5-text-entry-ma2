@@ -7,15 +7,15 @@ import re
 import pandas as pd
 from io import StringIO
 import time
+
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
 
-
 class SuperText(QtWidgets.QTextEdit):
- 
+
     def __init__(self, example_text):
         super(SuperText, self).__init__()
-        self.numbers=[]
+        self.numbers = []
         self.template_doc = ""
         self.setHtml(example_text)
         self.prev_content = ""
@@ -30,8 +30,8 @@ class SuperText(QtWidgets.QTextEdit):
         self.render_template()
         self.initUI()
         self.setup_table()
-        
-    def initUI(self):      
+
+    def initUI(self):
         self.setGeometry(0, 0, 400, 400)
         self.setWindowTitle('SuperText')
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -51,10 +51,10 @@ class SuperText(QtWidgets.QTextEdit):
     def change_value(self, val_id, amount):
         self.numbers[int(str(val_id))] += amount / 120
         self.render_template()
-        
+
     def render_template(self):
         cur = self.textCursor()
-        doc = self.template_doc 
+        doc = self.template_doc
         for num_id, num in enumerate(self.numbers):
             doc = doc.replace('$' + str(num_id) + '$', '%d' % (num))
         self.setHtml(doc)
@@ -69,7 +69,7 @@ class SuperText(QtWidgets.QTextEdit):
             self.template_doc = content
             return
         for num_id in range(len(numbers)):
-            content = re.sub(" " + str(numbers[num_id])  , " <a href='%d'>$%d$</a>" % (num_id, num_id), content, count=1)
+            content = re.sub(" " + str(numbers[num_id]), " <a href='%d'>$%d$</a>" % (num_id, num_id), content, count=1)
         self.template_doc = content
 
     # Grander additions:
@@ -103,12 +103,11 @@ class SuperText(QtWidgets.QTextEdit):
                 print("word typed at", time.time(), ":", self.prev_word)
                 self.add_word_to_table()
 
-
     def setup_table(self):
         # Initializes main dataframe
-        self.column_names = ["sentence index", "Timestamp (start of word)", "Timestamp (end of word)", "word typed", "entry speed (in ms)", "Timestamp (test started)", "Timestamp (test finished)"]
+        self.column_names = ["sentence index", "Timestamp (start of word)", "Timestamp (end of word)", "word typed",
+                             "entry speed (in ms)", "Timestamp (test started)", "Timestamp (test finished)"]
         self.log_data = pd.DataFrame(columns=self.column_names)
-
 
     def add_word_to_table(self):
         # adding a row:
@@ -127,7 +126,6 @@ class SuperText(QtWidgets.QTextEdit):
         self.sentence_index = self.sentence_index + 1
         self.log_table()
         return
-
 
     def log_table(self):
         # https://stackoverflow.com/questions/51201519/pandas-to-csvsys-stdout-doesnt-work-under-my-environment/51201718
@@ -149,7 +147,6 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     super_text = SuperText("")
     sys.exit(app.exec_())
-
 
 
 if __name__ == '__main__':
